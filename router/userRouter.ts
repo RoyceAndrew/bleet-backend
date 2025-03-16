@@ -1,5 +1,5 @@
 import express from "express";
-import { editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset } from "../controller/userController.ts";
+import { upBanner ,uploadPhoto, editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset } from "../controller/userController.ts";
 import jwtMiddleware from "../middleware/jwtMiddleware.ts";
 import jwtReset from "../middleware/jwtReset.ts";
 import { upload } from "../middleware/multer.ts";
@@ -20,7 +20,9 @@ router.get("/check_reset/:token", jwtReset, checkReset);
 
 router.post("/check_email", check_email);
 
-router.post("/upload", upload.single("file"), (req, res) => {});
+router.patch("/upload", jwtMiddleware, upload.single("file"), uploadPhoto);
+
+router.patch("/uploadBanner", jwtMiddleware, upload.single("file"), upBanner);
 
 router.get("/getInfo", jwtMiddleware, getInfo)
 

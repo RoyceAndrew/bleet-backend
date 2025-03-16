@@ -18,6 +18,7 @@
   "type": "module",
   "dependencies": {
     "@prisma/client": "^6.4.0",
+    "@supabase/supabase-js": "^2.49.1",
     "acorn": "^8.14.0",
     "acorn-walk": "^8.3.4",
     "anymatch": "^3.1.3",

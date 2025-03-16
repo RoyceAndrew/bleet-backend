@@ -24,6 +24,7 @@ const jwtMiddleware = (
       return;
     }
     req.body.id = decoded.id;
+    res.locals.id = decoded.id;
     next();
   } catch (error) {
     res.clearCookie("token");

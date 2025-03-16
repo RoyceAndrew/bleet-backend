@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import env from "dotenv";
 import nodemailer from "nodemailer";
 import { UUIDTypes, v4 as uuidv4 } from "uuid";
+import { uploadToCloud, deleteProfile, uploadBanner, deleteBanner } from "../services/cloudStorage.ts";
 
 env.config();
 const saltRounds: number = 10;
@@ -28,16 +29,15 @@ const userRegister = async (req: Request, res: Response): Promise<void> => {
   const token: UUIDTypes | null = uuidv4();
 
   try {
-    const checkError = []
+    const checkError = [];
     const checkEmail = await prisma.user.findUnique({ where: { email } });
     if (checkEmail) {
       checkError.push("Email already exists");
-      
     }
 
     const checkUsername = await prisma.user.findUnique({ where: { username } });
     if (checkUsername) {
-      checkError.push("Username already exists")
+      checkError.push("Username already exists");
     }
 
     if (!validator.isEmail(email)) {
@@ -94,12 +94,10 @@ const userRegister = async (req: Request, res: Response): Promise<void> => {
           "</a>" +
           " to verify your account",
       });
-      res
-        .status(201)
-        .json({
-          account: createUser,
-          message: "Check your email to verify your account",
-        });
+      res.status(201).json({
+        account: createUser,
+        message: "Check your email to verify your account",
+      });
     });
   } catch (error: unknown | Error) {
     if (error instanceof Error) {
@@ -121,19 +119,19 @@ const userLogin = async (req: Request, res: Response): Promise<void> => {
       if (result) {
         if (!checkEmail.isVerif) {
           res.status(400).json("Please verify your email");
-          return
+          return;
         }
         const token = jwt.sign(
           { id: checkEmail.id },
           process.env.TOKENKEY as string,
           { expiresIn: "3d" }
         );
-        res.cookie( "token", token, {
+        res.cookie("token", token, {
           maxAge: 1000 * 60 * 60 * 24 * 3,
           httpOnly: true,
           secure: true,
-          sameSite: "strict"
-        })
+          sameSite: "strict",
+        });
         res.status(200).json({ checkEmail, token });
       } else {
         res.status(400).json({ error: "Incorrect password" });
@@ -181,7 +179,7 @@ const checkUser = async (req: Request, res: Response): Promise<void> => {
     if (!checkUser) {
       throw Error("User not found");
     }
-    const {username, email, ...data} = checkUser
+    const { username, email, ...data } = checkUser;
     res.status(200).json({ username, email });
   } catch (error: unknown | Error) {
     if (error instanceof Error) {
@@ -203,14 +201,16 @@ const logout = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: "Something went wrong" });
     }
   }
-}
+};
 
 const check_email = async (req: Request, res: Response): Promise<void> => {
   const { email } = req.body as userBody;
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {
-      const token = jwt.sign({ id: user.id }, process.env.RESETKEY as string, { expiresIn: "1h" });
+      const token = jwt.sign({ id: user.id }, process.env.RESETKEY as string, {
+        expiresIn: "1h",
+      });
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -224,10 +224,15 @@ const check_email = async (req: Request, res: Response): Promise<void> => {
         to: user.email,
         subject: "Reset password",
         html: `Please click on the link to reset your password: <a href="https://localhost:5173/password_reset/${token}">Reset password</a>`,
-      })
-      }
-    
-    res.status(200).json({ message: 'If an account with this email exists, a password reset link has been sent.' });
+      });
+    }
+
+    res
+      .status(200)
+      .json({
+        message:
+          "If an account with this email exists, a password reset link has been sent.",
+      });
   } catch (error: unknown | Error) {
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
@@ -235,9 +240,7 @@ const check_email = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: "Something went wrong" });
     }
   }
-}
-
-
+};
 
 const changePassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -247,7 +250,7 @@ const changePassword = async (req: Request, res: Response): Promise<void> => {
         "Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character"
       );
     }
-    
+
     const check = await prisma.user.findUnique({ where: { id } });
     const compare = await bcrypt.compare(password, check?.password as string);
     if (compare) {
@@ -257,7 +260,7 @@ const changePassword = async (req: Request, res: Response): Promise<void> => {
     await prisma.user.update({
       where: { id },
       data: { password: hash, passwordChangedAt: new Date() },
-    })
+    });
     res.status(200).json({ message: "Password changed" });
   } catch (error: unknown | Error) {
     if (error instanceof Error) {
@@ -266,29 +269,29 @@ const changePassword = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: "Something went wrong" });
     }
   }
-}
+};
 
 const checkReset = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ message: "Authorized" });
-}
+};
 
 const getInfo = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { id } = req.body as userBody;
-      const checkUser = await prisma.user.findUnique({ where: { id } });
-      if (!checkUser) {
-        throw Error("User not found");
-      }
-      const {password, passwordChangedAt, isVerif, token, ...data} = checkUser
-      res.status(200).json({ data });
-    } catch (error: unknown | Error) {
-        if (error instanceof Error) {
-          res.status(400).json({ error: error.message });
-        } else {
-          res.status(400).json({ error: "Something went wrong" });
-        }
-      }
-}
+  try {
+    const { id } = req.body as userBody;
+    const checkUser = await prisma.user.findUnique({ where: { id } });
+    if (!checkUser) {
+      throw Error("User not found");
+    }
+    const { password, passwordChangedAt, isVerif, token, ...data } = checkUser;
+    res.status(200).json({ data });
+  } catch (error: unknown | Error) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: "Something went wrong" });
+    }
+  }
+};
 
 const editProfile = async (req: Request, res: Response): Promise<void> => {
   const { id, displayname, bio, website } = req.body as userBody;
@@ -296,29 +299,39 @@ const editProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     if (bio) {
       if (bio.length > 160) {
-        res.status(400).json({ error: "Bio must be less than or equal to 160 characters" });
-        return
+        res
+          .status(400)
+          .json({ error: "Bio must be less than or equal to 160 characters" });
+        return;
       }
     }
     if (displayname.length > 50) {
-      res.status(400).json({ error: "Display name must be less than or equal to 50 characters" });
-      return
+      res
+        .status(400)
+        .json({
+          error: "Display name must be less than or equal to 50 characters",
+        });
+      return;
     }
     if (displayname.length < 3) {
-      res.status(400).json({ error: "Display name must be greater than 3 characters" });
-      return
+      res
+        .status(400)
+        .json({ error: "Display name must be greater than 3 characters" });
+      return;
     }
     if (website) {
       if (!validator.isURL(website)) {
         res.status(400).json({ error: "Invalid URL" });
-        return
+        return;
       }
       if (website.length > 100) {
-        res.status(400).json({ error: "URL must be less than or equal to 100 characters" });
-        return
+        res
+          .status(400)
+          .json({ error: "URL must be less than or equal to 100 characters" });
+        return;
       }
     }
-    
+
     await prisma.user.update({
       where: { id },
       data: { displayname, bio, website },
@@ -331,6 +344,105 @@ const editProfile = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: "Something went wrong" });
     }
   }
+};
+
+const uploadPhoto = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = res.locals as userBody;
+
+    const file = req.file as Express.Multer.File;
+
+    if (!file) {
+      throw Error("No file uploaded");
+    }
+    const oldImage = await prisma.user.findUnique({ where: { id } });
+    if (
+      oldImage?.profilePicture !==
+      "https://evardcsgulwzvbjwcokb.supabase.co/storage/v1/object/public/profilepicture//default.jpeg"
+    ) {
+      await deleteProfile(
+        oldImage?.profilePicture?.split(
+          "https://evardcsgulwzvbjwcokb.supabase.co/storage/v1/object/public/profilepicture/"
+        )[1] as string
+      );
+    }
+    const uploadUrl = await uploadToCloud(
+      file.buffer,
+      file.mimetype,
+      file.originalname
+    );
+
+    const photo = await prisma.user.update({
+      where: { id },
+      data: { profilePicture: uploadUrl },
+    });
+    const { password, passwordChangedAt, isVerif, token, ...data } = photo;
+
+    res.status(200).json({ data });
+  } catch (error: unknown | Error) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: "Something went wrong" });
+      console.log(error);
+    }
+  }
+};
+
+const upBanner = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = res.locals as userBody;
+
+    const file = req.file as Express.Multer.File;
+
+    if (!file) {
+      throw Error("No file uploaded");
+    }
+    const oldImage = await prisma.user.findUnique({ where: { id } });
+    if (
+      oldImage?.banner !==
+      "https://evardcsgulwzvbjwcokb.supabase.co/storage/v1/object/public/banner//banner.jpeg"
+    ) {
+      await deleteBanner(
+        oldImage?.banner?.split(
+          "https://evardcsgulwzvbjwcokb.supabase.co/storage/v1/object/public/banner/"
+        )[1] as string
+      );
+    }
+    const uploadUrl = await uploadBanner(
+      file.buffer,
+      file.mimetype,
+      file.originalname
+    );
+
+    const photo = await prisma.user.update({
+      where: { id },
+      data: { banner: uploadUrl },
+    });
+    const { password, passwordChangedAt, isVerif, token, ...data } = photo;
+
+    res.status(200).json({ data });
+  } catch (error: unknown | Error) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: "Something went wrong" });
+      console.log(error);
+    }
+  }
 }
 
-export { editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset };
+export {
+  uploadPhoto,
+  upBanner,
+  editProfile,
+  getInfo,
+  userRegister,
+  userLogin,
+  verifyEmail,
+  checkUser,
+  logout,
+  check_email,
+  changePassword,
+  checkReset,
+};
