@@ -9,24 +9,34 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String  @id @default(uuid())
-  email     String  @unique
-  username  String  @unique
-  password  String
-  token     String? @unique
-  isVerif   Boolean @default(false)
+  id                String    @id @default(uuid())
+  email             String    @unique
+  username          String    @unique
+  password          String
+  token             String?   @unique
+  isVerif           Boolean   @default(false)
   passwordChangedAt DateTime?
-  profilePicture String?
-  banner    String?
-  displayname String
-  bio       String?
-  website   String?
-  updateAt  DateTime @updatedAt
-  createAt  DateTime @default(now())
+  profilePicture    String?
+  banner            String?
+  displayname       String
+  bio               String?
+  website           String?
+  updateAt          DateTime  @updatedAt
+  createAt          DateTime  @default(now())
+  Post              Post[]
+}
+
+model Post {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  user_id    String
+  like       Int?     @default(0)
+  text       String?
+  user       User?     @relation(fields: [user_id], references: [id])
 }
