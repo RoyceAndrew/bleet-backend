@@ -37,8 +37,8 @@ const getProfilePost = async (req: Request, res: Response): Promise<void> => {
 
 const deletePost = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {postId} = req.body;
-      const post = await prisma.post.delete({where: {id: postId}})
+      const {postId, id} = req.body;
+      const post = await prisma.post.delete({where: {id: postId, user_id: id}})
       res.status(200).json({post})
     } catch (error) {
         if (error instanceof Error) {
@@ -49,4 +49,21 @@ const deletePost = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-export { createPost, getProfilePost, deletePost };
+const getAllPosts = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const post = await prisma.post.findMany({orderBy: {created_at: "desc"}, include: {user: {select: {
+        displayname: true,
+        profilePicture: true,
+        username: true
+      }}}})
+      res.status(200).json({post})
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(400).json({ error: "Something went wrong" });
+        }
+    }
+}
+
+export { createPost, getProfilePost, deletePost, getAllPosts };
