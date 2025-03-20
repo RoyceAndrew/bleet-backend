@@ -30,6 +30,16 @@ model User {
   updateAt          DateTime  @updatedAt
   createAt          DateTime  @default(now())
   Post              Post[]
+  Like              Like[]
+}
+
+model Like {
+  id         String   @id @default(uuid())
+  post_id    String
+  user_id    String
+  user       User?    @relation(fields: [user_id], references: [id])
+  post       Post?    @relation(fields: [post_id], references: [id])
+  created_at DateTime @default(now())
 }
 
 model Post {
@@ -38,5 +48,6 @@ model Post {
   user_id    String
   like       Int?     @default(0)
   text       String?
-  user       User?     @relation(fields: [user_id], references: [id])
+  user       User?    @relation(fields: [user_id], references: [id])
+  Like       Like[]
 }
