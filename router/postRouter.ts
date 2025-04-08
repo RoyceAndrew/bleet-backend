@@ -1,5 +1,5 @@
 import express from "express";
-import { createPost, getProfilePost, deletePost, getAllPosts, streamPost, likePost } from "../controller/postController.ts";
+import { upComment, createPost, getProfilePost, deletePost, getAllPosts, streamPost, likePost, detailPost } from "../controller/postController.ts";
 
 const router: express.Router = express.Router();
 
@@ -14,5 +14,9 @@ router.get("/", getAllPosts)
 router.get("/stream", streamPost)
 
 router.post("/like", likePost)
+
+router.get("/detail/:postId", detailPost)
+
+router.post("/comment", upComment)
 
 export default router;

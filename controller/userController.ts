@@ -87,7 +87,7 @@ const userRegister = async (req: Request, res: Response): Promise<void> => {
         subject: "Email Verification",
         html:
           "Please click the" +
-          "<a href=http://localhost:3000/api/user/verify/" +
+          "<a href=http://localhost:5173/verify/" +
           token +
           ">" +
           " Click Here" +

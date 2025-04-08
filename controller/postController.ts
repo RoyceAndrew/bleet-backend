@@ -10,6 +10,7 @@ const createPost = async (req: Request, res: Response): Promise<void> => {
         const post = await prisma.post.create({ data: { ...data, user_id: id } });
         res.status(200).json({ post });
     } catch (error: unknown | Error) {
+        console.log(error)
         if (error instanceof Error) {
             res.status(400).json({ error: error.message });
         } else {
@@ -28,6 +29,7 @@ const getProfilePost = async (req: Request, res: Response): Promise<void> => {
     }},Like: {select: {user_id: true, post_id: true}}}})
       res.status(200).json({post})
     } catch (error) {
+        console.log(error)
         if (error instanceof Error) {
             res.status(400).json({ error: error.message });
         } else {
@@ -42,6 +44,7 @@ const deletePost = async (req: Request, res: Response): Promise<void> => {
       const post = await prisma.post.delete({where: {id: postId, user_id: id}})
       res.status(200).json({post})
     } catch (error) {
+        console.log(error)
         if (error instanceof Error) {
             res.status(400).json({ error: error.message });
         } else {
@@ -59,6 +62,7 @@ const getAllPosts = async (_req: Request, res: Response): Promise<void> => {
       }},Like: {select: {user_id: true, post_id: true}}}})
       res.status(200).json({post})
     } catch (error) {
+        console.log(error)
         if (error instanceof Error) {
             res.status(400).json({ error: error.message });
         } else {
@@ -96,6 +100,7 @@ const streamPost = async (req: Request, res: Response): Promise<void> => {
         clearInterval(stream);
     })
 } catch (error) {
+    console.log(error)
     if (error instanceof Error) {
         res.status(400).json({ error: error.message });
     } else {
@@ -125,6 +130,42 @@ const likePost = async (req: Request, res: Response): Promise<void> => {
         return
       }
     } catch (error) {    
+        console.log(error)
+        if (error instanceof Error) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(400).json({ error: "Something went wrong" });
+        }
+    }
+}
+
+const detailPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {postId} = req.params;
+      const post = await prisma.post.findUnique({where: {id: postId}, include: {user: {select: {
+        displayname: true,
+        profilePicture: true,
+        username: true
+      }},Like: {select: {user_id: true, post_id: true}}}})
+      
+      res.status(200).json({post})
+    } catch (error) {
+        console.log(error)
+        if (error instanceof Error) {
+            res.status(400).json({ error: error.message });
+        } else {
+            res.status(400).json({ error: "Something went wrong" });
+        }
+    }
+}
+
+const upComment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {postId, id, comment} = req.body;
+      const result = await prisma.post.create({data: {reply_to: postId, user_id: id, text: comment}})
+      res.status(200).json({result})
+    } catch (error) {    
+        console.log(error)
         if (error instanceof Error) {
             res.status(400).json({ error: error.message });
         } else {
@@ -134,6 +175,4 @@ const likePost = async (req: Request, res: Response): Promise<void> => {
 }
 
 
-
-
-export { createPost, getProfilePost, deletePost, getAllPosts, streamPost, likePost };
+export { createPost, getProfilePost, deletePost, getAllPosts, streamPost, likePost, detailPost, upComment };
