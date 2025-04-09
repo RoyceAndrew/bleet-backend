@@ -60,7 +60,7 @@ const userRegister = async (req, res) => {
                 to: email,
                 subject: "Email Verification",
                 html: "Please click the" +
-                    "<a href=http://localhost:5173/verify/" +
+                    "<a href=https://bleet-frontend-4bk4.vercel.app/verify/" +
                     token +
                     ">" +
                     " Click Here" +
