@@ -100,7 +100,7 @@ const userLogin = async (req, res) => {
                     maxAge: 1000 * 60 * 60 * 24 * 3,
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "None",
                 });
                 res.status(200).json({ checkEmail, token });
             }
