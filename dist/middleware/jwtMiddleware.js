@@ -1,14 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var jsonwebtoken_1 = require("jsonwebtoken");
-var jwtMiddleware = function (req, res, next) {
-    var token = req.cookies.token;
+import jwt from "jsonwebtoken";
+const jwtMiddleware = (req, res, next) => {
+    const token = req.cookies.token;
     if (!token) {
         res.status(401).json({ error: "Unauthorized" });
         return;
     }
     try {
-        var decoded = jsonwebtoken_1.default.verify(token, process.env.TOKENKEY);
+        const decoded = jwt.verify(token, process.env.TOKENKEY);
         if (typeof decoded === "string" || !decoded.id) {
             res.clearCookie("token");
             res.status(401).json({ error: "Unauthorized" });
@@ -28,4 +26,4 @@ var jwtMiddleware = function (req, res, next) {
         });
     }
 };
-exports.default = jwtMiddleware;
+export default jwtMiddleware;
