@@ -69,7 +69,6 @@
     "yn": "^3.1.1"
   },
   "scripts": {
-    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx tsx --env-file=.env --watch  ./server.ts"
   },
