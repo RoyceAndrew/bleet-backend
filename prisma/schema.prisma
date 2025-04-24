@@ -31,6 +31,7 @@ model User {
   createAt          DateTime  @default(now())
   Post              Post[]
   Like              Like[]
+  Repost            Repost[]
 }
 
 model Like {
@@ -47,7 +48,17 @@ model Post {
   created_at DateTime @default(now())
   user_id    String
   text       String
-  reply_to   String?  
+  reply_to   String?
   user       User?    @relation(fields: [user_id], references: [id])
   Like       Like[]
+  Repost     Repost[]
+}
+
+model Repost {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  user_id    String
+  post_id    String
+  user       User?    @relation(fields: [user_id], references: [id])
+  post       Post?    @relation(fields: [post_id], references: [id])
 }
