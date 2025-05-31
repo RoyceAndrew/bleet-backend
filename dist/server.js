@@ -1,15 +1,15 @@
 import express from "express";
 import env from "dotenv";
-import userRouter from "./router/userRouter.js";
+import userRouter from "./router/userRouter.ts";
 import cors from "cors";
-import jwtMiddleware from "./middleware/jwtMiddleware.js";
+import jwtMiddleware from "./middleware/jwtMiddleware.ts";
 import cookieParser from "cookie-parser";
-import postRouter from "./router/postRouter.js";
+import postRouter from "./router/postRouter.ts";
 env.config();
 const app = express();
 const port = process.env.PORT || 3000;
 const corsOptions = {
-    origin: "https://bleet-frontend-4bk4.vercel.app",
+    origin: "http://localhost:5173",
     optionsSuccessStatus: 200,
     credentials: true
 };

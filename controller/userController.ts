@@ -6,7 +6,12 @@ import jwt from "jsonwebtoken";
 import env from "dotenv";
 import nodemailer from "nodemailer";
 import { UUIDTypes, v4 as uuidv4 } from "uuid";
-import { uploadToCloud, deleteProfile, uploadBanner, deleteBanner } from "../services/cloudStorage.ts";
+import {
+  uploadToCloud,
+  deleteProfile,
+  uploadBanner,
+  deleteBanner,
+} from "../services/cloudStorage.ts";
 
 env.config();
 const saltRounds: number = 10;
@@ -21,6 +26,7 @@ interface userBody {
   displayname: string;
   isVerif: boolean;
   bio: string;
+  following: string;
   website: string;
 }
 
@@ -85,14 +91,11 @@ const userRegister = async (req: Request, res: Response): Promise<void> => {
         from: '"bleetcorp@gmail.com" <bleetcorp@gmail.com>',
         to: email,
         subject: "Email Verification",
-        html:
-          "Please click the" +
-          "<a href=http://localhost:5173/verify/" +
-          token +
-          ">" +
-          " Click Here" +
-          "</a>" +
-          " to verify your account",
+        html: `Please click the 
+<a href="${process.env.CLIENT_URL}/verify/${token}">
+  Click Here
+</a> 
+to verify your account`,
       });
       res.status(201).json({
         account: createUser,
@@ -114,6 +117,9 @@ const userLogin = async (req: Request, res: Response): Promise<void> => {
     const checkEmail = await prisma.user.findUnique({ where: { email } });
     if (!checkEmail) {
       throw Error("Email does not exist");
+    }
+    if (checkEmail.password === "google") {
+      throw Error("Please login with google or register manually");
     }
     bcrypt.compare(password, checkEmail.password, function (err, result) {
       if (result) {
@@ -190,7 +196,7 @@ const checkUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-const logout = async (req: Request, res: Response): Promise<void> => {
+const logout = async (_req: Request, res: Response): Promise<void> => {
   try {
     res.clearCookie("token");
     res.status(200).json({ message: "Logout successful" });
@@ -223,16 +229,14 @@ const check_email = async (req: Request, res: Response): Promise<void> => {
         from: "bleetcorp@gmail.com",
         to: user.email,
         subject: "Reset password",
-        html: `Please click on the link to reset your password: <a href="https://localhost:5173/password_reset/${token}">Reset password</a>`,
+        html: `Please click on the link to reset your password: <a href="${process.env.CLIENT_URL}/password_reset/${token}">Reset password</a>`,
       });
     }
 
-    res
-      .status(200)
-      .json({
-        message:
-          "If an account with this email exists, a password reset link has been sent.",
-      });
+    res.status(200).json({
+      message:
+        "If an account with this email exists, a password reset link has been sent.",
+    });
   } catch (error: unknown | Error) {
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
@@ -279,11 +283,15 @@ const getInfo = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.body as userBody;
     const checkUser = await prisma.user.findUnique({ where: { id } });
+    const following = await prisma.follow.findMany({ where: { user_id: id } });
+    const follower = await prisma.follow.findMany({
+      where: { following_id: id },
+    });
     if (!checkUser) {
       throw Error("User not found");
     }
     const { password, passwordChangedAt, isVerif, token, ...data } = checkUser;
-    res.status(200).json({ data });
+    res.status(200).json({ data, following, follower });
   } catch (error: unknown | Error) {
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
@@ -306,11 +314,9 @@ const editProfile = async (req: Request, res: Response): Promise<void> => {
       }
     }
     if (displayname.length > 50) {
-      res
-        .status(400)
-        .json({
-          error: "Display name must be less than or equal to 50 characters",
-        });
+      res.status(400).json({
+        error: "Display name must be less than or equal to 50 characters",
+      });
       return;
     }
     if (displayname.length < 3) {
@@ -430,10 +436,137 @@ const upBanner = async (req: Request, res: Response): Promise<void> => {
       console.log(error);
     }
   }
-}
+};
+
+const searchUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { search } = req.params;
+    const result = await prisma.user.findMany({
+      where: { username: { contains: search, mode: "insensitive" } },
+      take: 5,
+    });
+    res.status(200).json({ result });
+  } catch (error) {
+    console.log(error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: "Something went wrong" });
+    }
+  }
+};
+
+const follow = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = res.locals as userBody;
+    const { following } = req.body as userBody;
+
+    if (id === following) {
+      throw Error("You cannot follow yourself");
+    }
+
+    const check = await prisma.follow.findFirst({
+      where: { user_id: id, following_id: following },
+    });
+    if (!check) {
+      await prisma.follow.create({
+        data: { user_id: id, following_id: following },
+      });
+      res.status(200).json({ message: "Following successful" });
+      return;
+    }
+    if (check) {
+      await prisma.follow.delete({ where: { id: check.id } });
+      res.status(200).json({ message: "Unfollow successful" });
+      return;
+    }
+  } catch (error: unknown | Error) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: "Something went wrong" });
+    }
+  }
+};
+
+const checkFollow = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = res.locals;
+    const { folId } = req.params;
+    const result = await prisma.follow.findFirst({
+      where: { user_id: id, following_id: folId },
+    });
+    res.status(200).json({ result });
+  } catch (err) {
+    res.status(400).json({ error: "Something went wrong" });
+  }
+};
+
+const loginGoogle = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body.user;
+    const { name } = req.body.user.user_metadata;
+    const checkEmail = await prisma.user.findUnique({ where: { email } });
+
+    let username = name;
+    let isUnique = false;
+
+    while (!isUnique) {
+      const checkName = await prisma.user.findUnique({ where: { username } });
+      if (checkName) {
+        username = name + Math.floor(Math.random() * 1000);
+      } else {
+        isUnique = true;
+      }
+    }
+    if (checkEmail) {
+      const token = jwt.sign(
+        { id: checkEmail.id },
+        process.env.TOKENKEY as string,
+        { expiresIn: "3d" }
+      );
+      res.cookie("token", token, {
+        maxAge: 1000 * 60 * 60 * 24 * 3,
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+      });
+
+      res.status(200).json({ checkEmail, token });
+      return;
+    }
+    if (!checkEmail) {
+      const user = await prisma.user.create({
+        data: {
+          email,
+          username: username,
+          displayname: name,
+          password: "google",
+          isVerif: true,
+        },
+      });
+      const token = jwt.sign({ id: user.id }, process.env.TOKENKEY as string, {
+        expiresIn: "3d",
+      });
+      res.cookie("token", token, {
+        maxAge: 1000 * 60 * 60 * 24 * 3,
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+      });
+      res.status(200).json({ user, token });
+    }
+  } catch (err) {
+    res.status(400).json({ error: "Something went wrong" });
+  }
+};
 
 export {
+  loginGoogle,
   uploadPhoto,
+  checkFollow,
+  follow,
+  searchUser,
   upBanner,
   editProfile,
   getInfo,

@@ -1,5 +1,5 @@
 import express from "express";
-import { upBanner ,uploadPhoto, editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset } from "../controller/userController.ts";
+import { upBanner, loginGoogle, searchUser, follow,uploadPhoto, checkFollow,editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset } from "../controller/userController.ts";
 import jwtMiddleware from "../middleware/jwtMiddleware.ts";
 import jwtReset from "../middleware/jwtReset.ts";
 import { upload } from "../middleware/multer.ts";
@@ -8,9 +8,17 @@ const router: express.Router = express.Router();
 
 router.post("/register", userRegister) ;
 
+router.get("/follow/:folId", jwtMiddleware, checkFollow)
+
 router.post("/login", userLogin);
 
+router.post("/loginGoogle", loginGoogle);
+
+router.post("/follow", jwtMiddleware, follow);
+
 router.get("/check", jwtMiddleware, checkUser)
+
+router.get("/find/:search", searchUser)
 
 router.get("/verify/:token", verifyEmail)
 
