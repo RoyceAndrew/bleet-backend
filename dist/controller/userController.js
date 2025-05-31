@@ -101,7 +101,7 @@ const userLogin = async (req, res) => {
                     maxAge: 1000 * 60 * 60 * 24 * 3,
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "none",
                 });
                 res.status(200).json({ checkEmail, token });
             }
@@ -460,7 +460,7 @@ const loginGoogle = async (req, res) => {
                 maxAge: 1000 * 60 * 60 * 24 * 3,
                 httpOnly: true,
                 secure: true,
-                sameSite: "strict",
+                sameSite: "none",
             });
             res.status(200).json({ checkEmail, token });
             return;
@@ -482,7 +482,7 @@ const loginGoogle = async (req, res) => {
                 maxAge: 1000 * 60 * 60 * 24 * 3,
                 httpOnly: true,
                 secure: true,
-                sameSite: "strict",
+                sameSite: "none",
             });
             res.status(200).json({ user, token });
         }
