@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import env from "dotenv";
 import nodemailer from "nodemailer";
 import { v4 as uuidv4 } from "uuid";
-import { uploadToCloud, deleteProfile, uploadBanner, deleteBanner, } from "../services/cloudStorage.ts";
+import { uploadToCloud, deleteProfile, uploadBanner, deleteBanner, } from "../services/cloudStorage.js";
 env.config();
 const saltRounds = 10;
 const prisma = new PrismaClient();

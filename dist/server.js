@@ -1,10 +1,10 @@
 import express from "express";
 import env from "dotenv";
-import userRouter from "./router/userRouter.ts";
+import userRouter from "./router/userRouter.js";
 import cors from "cors";
-import jwtMiddleware from "./middleware/jwtMiddleware.ts";
+import jwtMiddleware from "./middleware/jwtMiddleware.js";
 import cookieParser from "cookie-parser";
-import postRouter from "./router/postRouter.ts";
+import postRouter from "./router/postRouter.js";
 env.config();
 const app = express();
 const port = process.env.PORT || 3000;

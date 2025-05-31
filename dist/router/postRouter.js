@@ -1,5 +1,5 @@
 import express from "express";
-import { followList, getFollow, reportPost, getUserFollowing, getFollowPosts, getUserFollowers, upComment, getReply, streamPost, repost, createPost, getProfilePost, getProfileReply, deletePost, getAllPosts, likePost, detailPost, getComment } from "../controller/postController.ts";
+import { followList, getFollow, reportPost, getUserFollowing, getFollowPosts, getUserFollowers, upComment, getReply, streamPost, repost, createPost, getProfilePost, getProfileReply, deletePost, getAllPosts, likePost, detailPost, getComment } from "../controller/postController.js";
 const router = express.Router();
 router.post("/create", createPost);
 router.post("/report", reportPost);

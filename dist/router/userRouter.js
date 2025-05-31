@@ -1,5 +1,5 @@
 import express from "express";
-import { upBanner, loginGoogle, searchUser, follow, uploadPhoto, checkFollow, editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset } from "../controller/userController.ts";
+import { upBanner, loginGoogle, searchUser, follow, uploadPhoto, checkFollow, editProfile, getInfo, userRegister, userLogin, verifyEmail, checkUser, logout, check_email, changePassword, checkReset } from "../controller/userController.js";
 import jwtMiddleware from "../middleware/jwtMiddleware.ts";
 import jwtReset from "../middleware/jwtReset.ts";
 import { upload } from "../middleware/multer.ts";
